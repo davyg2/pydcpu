@@ -1,0 +1,12 @@
+Juste some tools for 0x10cc cpu coded in python3.
+
+A debugger in pyqt, an assembler and a disassembler.
+
+STATUS :
+
+Assembler and debugger work fine on notch example(and
+should works on everything but it has not been
+very tested and some things still need to be implemented
+in the debugger)
+
+Disassembler should be rapidly implemented.
