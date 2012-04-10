@@ -1,0 +1,164 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+"""
+TODO:
+
+	- Break
+	- tick
+	- modif Var
+"""
+
+import os,sys
+import emulateur
+
+from PyQt4 import QtCore,QtGui
+from windowUi import Ui_MainWindow
+
+COL = 16
+
+class Main(QtGui.QMainWindow):
+	def __init__(self, f = None):
+		QtGui.QMainWindow.__init__(self)
+
+		self.ui=Ui_MainWindow()
+		self.ui.setupUi(self)
+
+		self.emul = emulateur.Emulateur(self.updateVar)
+		
+		self.modelVars = QtGui.QStandardItemModel()
+		self.modelVars.setHorizontalHeaderItem(0, QtGui.QStandardItem("Var"))
+		self.modelVars.setHorizontalHeaderItem(1, QtGui.QStandardItem("Value"))
+		self.ui.vars.setModel(self.modelVars)
+
+		self.modelRam = QtGui.QStandardItemModel()
+		
+		for i in range(0, COL):
+			self.modelRam.setHorizontalHeaderItem(i, QtGui.QStandardItem(hex(i)))
+		for j in range(int(emulateur.SIZERAM/COL)):
+			self.modelRam.setVerticalHeaderItem(j, QtGui.QStandardItem(hex(j*COL)))
+		
+		self.ui.ram.setModel(self.modelRam)
+		
+		self.ui.open.clicked.connect(self.openFile)
+		self.ui.step.clicked.connect(self.emul.step)
+		self.ui.contin.clicked.connect(self.toggle)
+		self.ui.reload.clicked.connect(self.load)
+		self.ui.addVar.clicked.connect(self.addVariable)
+		self.ui.command.returnPressed.connect(self.enter)
+		
+		for var in ['PC', 'SP'] + list("ABCXYZIJO"):
+			self.addVar(var)
+		
+		self.realstdout = sys.stdout
+		sys.stdout = self
+		sys.stderr = self
+		self.buffer = ""
+		
+		self.file = f
+		self.load()
+		self.started = False
+		
+		timer = QtCore.QTimer(self)
+		timer.timeout.connect(self.cb)
+		timer.start(0)
+	
+	def toggle(self):
+		self.started = not self.started
+		if self.started:
+			self.ui.contin.setText("Break")
+		else:
+			self.ui.contin.setText("Continue")
+	
+	def cb(self):
+		if self.started:
+			self.emul.step()
+	
+	def write(self, txt):
+		self.realstdout.write(txt)
+		self.buffer += txt
+		if self.buffer[-1] == '\n':
+			self.buffer = self.buffer[:-1]
+			self.flush()
+	
+	def enter(self):
+		t = self.ui.command.text()
+		print(">>>", t)
+		r = eval(t)
+		if r:
+			print(r)
+		self.ui.command.setText("")
+	
+	def flush(self):
+		self.ui.consol.appendPlainText(self.buffer)
+		self.buffer = ""
+	
+	def openFile(self):
+		self.file = QtGui.QFileDialog.getOpenFileName(self, "Open bin")
+		self.load()
+
+	def load(self):
+		if self.file:
+			self.emul.load(open(self.file, 'rb').read())
+			self.ui.consol.setPlainText("")
+		
+			self.started = False
+			self.ui.step.setEnabled(True)
+			self.ui.contin.setEnabled(True)
+			self.ui.reload.setEnabled(True)
+		else:
+			self.ui.step.setEnabled(False)
+			self.ui.contin.setEnabled(False)
+			self.ui.reload.setEnabled(False)
+	
+	def addVariable(self):
+		v = QtGui.QInputDialog.getText(self, "Add a var",
+			"Enter the name of a register or a ram adress")
+		try:
+			if v[1]:
+				if v[0] in self.emul.registres:
+					v = v[0]
+				else:
+					if v[0].startswith("0x"):
+						v = int(v[0][2:],16)
+					elif v[0].startswith("0"):
+						v = int(v[0],0)
+					else:
+						v = int(v[0])
+				self.addVar(v)
+		except ValueError:
+			print("Bad adress or register")
+		except IndexError:
+			print("Adress out of ram")
+		
+	
+	def addVar(self, var):
+		if type(var) == int:
+			dvar = hex(var)
+		else:
+			dvar = var
+		dvar = QtGui.QStandardItem(dvar)
+		dval = QtGui.QStandardItem(hex(self.emul[var]))
+		self.modelVars.appendRow([dvar, dval])
+	
+	def updateVar(self, var, val):
+		if type(var) == int:
+			self.modelRam.setItem(int(var / COL),var % COL, QtGui.QStandardItem(hex(val)))
+			var = hex(var)
+		for i in range(0, self.modelVars.rowCount()):
+			if self.modelVars.item(i, 0).text() == var:
+				self.modelVars.setItem(i, 1, QtGui.QStandardItem(hex(val)))
+	
+def main():
+	app = QtGui.QApplication(sys.argv)
+	if len(sys.argv)>1:
+		f = sys.argv[1]
+	else:
+		f = None
+	window=Main(f)
+	window.show()
+	sys.exit(app.exec_())
+    
+
+if __name__ == "__main__":
+	main()
