@@ -50,6 +50,36 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QTableView" name="breaks">
+          <property name="maximumSize">
+           <size>
+            <width>200</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <attribute name="horizontalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="horizontalHeaderDefaultSectionSize">
+           <number>200</number>
+          </attribute>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="addBreak">
+          <property name="text">
+           <string>Add breakpoint</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
          <widget class="QPlainTextEdit" name="consol">
