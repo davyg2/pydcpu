@@ -1,7 +1,14 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from distutils.core import setup
+import sys
+
+if sys.platform == 'win32':
+    from cx_Freeze import setup, Executable
+    exs=[Executable("pydcpu-dbg"),Executable("pydcpu-emul"),Executable("pydcpu-asm")]
+else:
+    from distutils.core import setup
+    exs=[]
 
 setup(name='pydcpu',
       version='0.1a',
@@ -11,4 +18,5 @@ setup(name='pydcpu',
       url='http://github.com/davyg/pydcpu',
       scripts=['pydcpu-asm', 'pydcpu-dbg', 'pydcpu-emul'],
       packages=['pydcpu'],
+      executables = exs
      )
