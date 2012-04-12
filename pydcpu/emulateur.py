@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 """
            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
                    Version 2, December 2004
@@ -14,16 +14,16 @@ as the name is changed.
 
  0. You just DO WHAT THE FUCK YOU WANT TO.
 """
-import util
-import dumper
+from . import util
+from . import dumper
 
-SIZERAM = 0x10000
 
 class Emulateur:
 	instr1 = []
 	instr2 = []
 	arg = []
 	regs = "ABCXYZIJ"
+	size_ram = 0x10000
 	
 	def init():
 		Emulateur.instr1 = [
@@ -85,7 +85,7 @@ class Emulateur:
 	
 	def __init__(self, cbVar = None):
 		self.registres = dict([(reg, 0) for reg in list(self.regs) + ['PC', 'SP', 'O']])
-		self.ram = [0]*SIZERAM
+		self.ram = [0]*self.size_ram
 		self.tick = 0
 		self.cbVar = cbVar
 	
@@ -156,11 +156,11 @@ class Emulateur:
 	
 	def incr(self, reg):
 		old = self[reg]
-		self[reg] = (self[reg] + 1) % SIZERAM
+		self[reg] = (self[reg] + 1) % self.size_ram
 		return old
 	
 	def decr(self, reg):
-		self[reg] = (self[reg] - 1 + SIZERAM) % SIZERAM
+		self[reg] = (self[reg] - 1 + self.size_ram) % self.size_ram
 		return self[reg]
 
 	def test(self, v):

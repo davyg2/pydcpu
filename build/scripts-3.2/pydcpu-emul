@@ -1,0 +1,51 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+"""
+           DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+                   Version 2, December 2004
+
+Copyright (C) 2012 Guillaume DAVY <davyg2 at gmail dot com>
+
+Everyone is permitted to copy and distribute verbatim or modified
+copies of this license document, and changing it is allowed as long
+as the name is changed.
+
+           DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+  TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+
+ 0. You just DO WHAT THE FUCK YOU WANT TO.
+"""
+
+import os,sys
+
+from PyQt4 import QtCore,QtGui
+
+from pydcpu.emulateur import Emulateur
+from pydcpu.computer import Computer
+
+class Emul(Computer):
+	def __init__(self, f):
+		Computer.__init__(self, Emulateur())
+		self.emul.load(open(f, 'rb').read())
+		timer = QtCore.QTimer(self)
+		timer.timeout.connect(self.emul.step)
+		timer.start(0)
+		timer2 = QtCore.QTimer(self)
+		timer2.timeout.connect(self.repaint)
+		timer2.start(100)
+		
+if not len(sys.argv)>1:
+	print("No input file")
+	exit(0)
+
+if len(sys.argv)>2 and sys.argv[2] == '-g':
+	app = QtGui.QApplication(sys.argv)
+	window = Emul(sys.argv[1])
+	window.show()
+	sys.exit(app.exec_())
+else:
+	emul = Emulateur()
+	emul.load(open(sys.argv[1], 'rb').read())
+	while True: emul.step()
+	
+

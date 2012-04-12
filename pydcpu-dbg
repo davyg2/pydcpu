@@ -23,10 +23,12 @@ TODO:
 """
 
 import os,sys
-import emulateur, computer
 
 from PyQt4 import QtCore,QtGui
-from windowUi import Ui_MainWindow
+
+from pydcpu.emulateur import Emulateur
+from pydcpu.computer import Computer
+from pydcpu.windowUi import Ui_MainWindow
 
 COL = 16
 
@@ -37,7 +39,7 @@ class Main(QtGui.QMainWindow):
 		self.ui=Ui_MainWindow()
 		self.ui.setupUi(self)
 
-		self.emul = emulateur.Emulateur(self.updateVar)
+		self.emul = Emulateur(self.updateVar)
 		
 		self.modelVars = QtGui.QStandardItemModel()
 		self.modelVars.setHorizontalHeaderItem(0, QtGui.QStandardItem("Expr"))
@@ -51,7 +53,7 @@ class Main(QtGui.QMainWindow):
 		
 		for i in range(0, COL):
 			self.modelRam.setHorizontalHeaderItem(i, QtGui.QStandardItem(hex(i)))
-		for j in range(int(emulateur.SIZERAM/COL)):
+		for j in range(int(self.emul.size_ram/COL)):
 			self.modelRam.setVerticalHeaderItem(j, QtGui.QStandardItem(hex(j*COL)))
 		
 		self.ui.ram.setModel(self.modelRam)
@@ -63,8 +65,8 @@ class Main(QtGui.QMainWindow):
 		self.ui.addVar.clicked.connect(self.addVariable)
 		self.ui.addBreak.clicked.connect(self.addBreakpoint)
 		self.ui.command.returnPressed.connect(self.enter)
-		self.computer = computer.Computer(self.emul)
-		#self.ui.blayout.addWidget(self.can)
+		self.computer = Computer(self.emul)
+		#self.ui.blayout.addWidget(self.computer)
 		self.computer.show()
 
 		self.env = {'gui' : self, 'emul':self.emul}

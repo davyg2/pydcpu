@@ -16,15 +16,15 @@ as the name is changed.
 """
 
 import os,sys
-import emulateur
 
 from PyQt4 import QtCore,QtGui
 
 class Computer(QtGui.QWidget):
 	def __init__(self, emul):
 		QtGui.QWidget.__init__(self)
-		self.setGeometry(300, 300, 384, 256)
+		self.setGeometry(850, 0, 384, 256)
 		self.emul = emul
+		self.setWindowTitle("Screen")
 
 	def paintEvent(self, event):
 		qp = QtGui.QPainter()
@@ -36,6 +36,6 @@ class Computer(QtGui.QWidget):
 			for j in range(0, 32):
 				c = self.emul[0x8000+j+i*32] & 0xff
 				if c:
-					qp.drawText(QtCore.QPoint(j*12,(i+1)*16), chr(c))      
+					qp.drawText(QtCore.QPoint(j*12,(i+1)*16), chr(c))
 		qp.end()
 

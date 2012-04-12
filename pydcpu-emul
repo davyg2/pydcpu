@@ -17,13 +17,15 @@ as the name is changed.
 """
 
 import os,sys
-import emulateur, computer
 
 from PyQt4 import QtCore,QtGui
 
-class Emul(computer.Computer):
+from pydcpu.emulateur import Emulateur
+from pydcpu.computer import Computer
+
+class Emul(Computer):
 	def __init__(self, f):
-		computer.Computer.__init__(self, emulateur.Emulateur())
+		Computer.__init__(self, Emulateur())
 		self.emul.load(open(f, 'rb').read())
 		timer = QtCore.QTimer(self)
 		timer.timeout.connect(self.emul.step)
@@ -42,7 +44,7 @@ if len(sys.argv)>2 and sys.argv[2] == '-g':
 	window.show()
 	sys.exit(app.exec_())
 else:
-	emul = emulateur.Emulateur()
+	emul = Emulateur()
 	emul.load(open(sys.argv[1], 'rb').read())
 	while True: emul.step()
 	

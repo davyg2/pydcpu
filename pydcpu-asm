@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 -*-
 """
            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
                    Version 2, December 2004
@@ -15,9 +16,10 @@ as the name is changed.
  0. You just DO WHAT THE FUCK YOU WANT TO.
 """
 
-import parser
+from pydcpu.parser import Parser
+import pydcpu.util as util
+
 import sys
-import util
 
 inputfile = None
 outputfile = None
@@ -40,7 +42,7 @@ if inputfile == None:
 if outputfile == None:
 	outputfile = "a.out"
 
-parser = parser.Parser()
+parser = Parser()
 
 f = open(inputfile, 'r')
 data = parser.parse(f.read())
