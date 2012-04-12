@@ -29,7 +29,8 @@ class Computer(QtGui.QWidget):
 	def paintEvent(self, event):
 		qp = QtGui.QPainter()
 		qp.begin(self)
-		qp.setPen(QtGui.QColor(168, 34, 3))
+		qp.setPen(QtGui.QColor(255, 255, 255))
+		qp.fillRect(event.rect(), QtGui.QColor(0,0,0))
 		qp.setFont(QtGui.QFont('Monospace', 12))
 		for i in range(0, 16):
 			for j in range(0, 32):
