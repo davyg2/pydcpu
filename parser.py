@@ -32,19 +32,26 @@ class Parser:
 		"PLUS",
 		"LAB",
 		"MOD",
-		"SEP"
+		"SEP",
+		"DAT",
+		"STR"
 	)
 
 	t_COM	= r";.*"
-	t_LAB	= r":[a-z][a-zA-z]*"
+	t_LAB	= r":[a-z][a-zA-z0-9_]*"
 	t_VIRG	= ','
 	t_BL	= '\['
 	t_BR	= '\]'
 	t_PLUS	= '\+'
-	t_SEP	= r'\n'
+	t_DAT	= r"DAT"
 
 
 	t_ignore = " \t"
+
+	def t_SEP(self, t):
+		r'\n'
+		t.lexer.lineno += 1
+		return t
 
 	INST1 = {
 		"SET" : 0x01,
@@ -66,7 +73,7 @@ class Parser:
 
 	def t_INST1(self, t):
 		r"SET|AND|BOR|XOR|ADD|SUB|MUL|SHR|SHL|DIV|MOD|IFE|IFN|IFG|IFB"
-		t.value = self.INST1[t.value]
+		t.value = self.INST1[t.value.upper()]
 		return t
 
 	INST2 = {
@@ -75,7 +82,7 @@ class Parser:
 
 	def t_INST2(self, t):
 		r"JSR"
-		t.value = self.INST2[t.value]
+		t.value = self.INST2[t.value.upper()]
 		return t
 
 	MOD = {
@@ -89,7 +96,7 @@ class Parser:
 
 	def t_MOD(self, t):
 		r"POP|PEEK|PUSH|SP|PC|O"
-		t.value = self.MOD[t.value]
+		t.value = self.MOD[t.value.upper()]
 		return t
 
 	REG = {
@@ -104,14 +111,14 @@ class Parser:
 	}
 
 	def t_REG(self, t):
-		r"[ABCXYZI]"
-		t.value = self.REG[t.value]
+		r"[ABCXYZIJ]"
+		t.value = self.REG[t.value.upper()]
 		return t
 
 	def t_LIT(self, t):
-		r"0x[0-9a-e]+|[a-z][a-zA-z]*|[0-9]+"
+		r"(0x[0-9a-f]+)|([a-z][a-zA-Z0-9_]*)|([0-9]+)"
 		orig = t.value
-		if orig[0] in "012345678":
+		if orig[0] in "0123456789":
 			if len(orig)>1 and orig[1] == 'x':
 				t.value = struct.pack("H",int(orig[2:], 16))
 			else:
@@ -119,6 +126,11 @@ class Parser:
 		else:
 			self.todo[self.caddr+1] = t.value
 			t.value = '\42\42'.encode()
+		return t
+
+	def t_STR(self, t):
+		r"\".*\""
+		t.value = t.value[1:-1]
 		return t
 
 	def t_error(self, t):
@@ -157,7 +169,7 @@ class Parser:
 
 	def p_ligne_4(self, p):
 		"ligne : instruction"
-		self.addr = self.curraddr
+		self.addr = self.caddr
 		p[0] = p[1]
 
 	def p_ligne_5(self, p):
@@ -191,6 +203,40 @@ class Parser:
 		self.caddr += 1
 		cmd = struct.pack("H", p[2][0]*0x400 | p[1]*0x10)
 		p[0] = cmd + p[2][1]
+	
+	def p_instruction_dat(self, p):
+		"""
+		instruction : DAT listDat
+		"""
+		p[0] = p[2]
+	
+	def p_dat_chaine(self, p):
+		"""
+		dat : STR
+		"""
+		self.caddr += len(p[1])
+		p[0] = b''
+		for c in p[1]:
+			p[0] += struct.pack("H",ord(c))
+	
+	def p_dat_literal(self, p):
+		"""
+		dat : LIT
+		"""
+		self.caddr += 1
+		p[0] = p[1]
+	
+	def p_listDat_mul(self, p):
+		"""
+		listDat : dat VIRG listDat
+		"""
+		p[0] = p[1] + p[3]
+	
+	def p_listDat_one(self, p):
+		"""
+		listDat : dat
+		"""
+		p[0] = p[1]
 
 	def p_arg_reg(self, p):
 		"""
@@ -242,7 +288,7 @@ class Parser:
 		p[0] = (0x1f, p[1])
 
 	def p_error(self, p):
-		raise TypeError("unknown text at %r" % (p.value,))
+		raise TypeError("unknown text at %r" % (p.__dict__,))
 	
 	def __init__(self):
 		lex.lex(module=self)

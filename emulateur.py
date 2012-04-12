@@ -32,6 +32,7 @@ class Emulateur:
 			lambda s,a,b : s.set(a, s[a] +  s[b]),
 			lambda s,a,b : s.set(a, s[a] -  s[b]),
 			lambda s,a,b : s.set(a, s[a] *  s[b]),
+			lambda s,a,b : s.set(a, s[a] /  s[b]),
 			lambda s,a,b : s.set(a, s[a] %  s[b]),
 			lambda s,a,b : s.set(a, s[a] << s[b]),
 			lambda s,a,b : s.set(a, s[a] >> s[b]),
@@ -104,7 +105,13 @@ class Emulateur:
 				da = hex(a)
 			else:
 				da = a
-			print(pc, hex(op), hex(arg1), hex(arg2), dumper.MNEM2[arg1], da)
+			print("{pc}: {mnem}({op}) {a}({va})".format(
+				pc=pc,
+				op=hex(arg1),
+				mnem=dumper.MNEM2[arg1],
+				a=da,
+				va=hex(self[a])
+			))
 			self.instr2[arg1](self, a)
 		else:
 			a = self.getArg(arg1)
@@ -117,8 +124,10 @@ class Emulateur:
 				db = hex(b)
 			else:
 				db = b
-			print("{pc}: {mnem} {a}({va}), {b}({vb})".format(
+			
+			print("{pc}: {mnem}({op}) {a}({va}), {b}({vb})".format(
 				pc=pc,
+				op=hex(op),
 				mnem=dumper.MNEM1[op],
 				a=da,
 				va=hex(self[a]),
@@ -138,7 +147,8 @@ class Emulateur:
 			self.ram[item] = v
 		else:
 			self.registres[item] = v
-		self.cbVar(item, v)
+		if self.cbVar:
+			self.cbVar(item, v)
 	
 	def set(self, out, data):
 		self[out] =  data & 0xffff

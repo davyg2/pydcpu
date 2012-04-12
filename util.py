@@ -16,7 +16,7 @@ as the name is changed.
 """
 import struct
 
-NEXTWORD = list(range(0x10,0x7)) + [0x1e, 0x1f]
+NEXTWORD = list(range(0x10,0x18)) + [0x1e, 0x1f]
 
 def myhex(x):
 	x = hex(x)

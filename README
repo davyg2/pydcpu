@@ -1,4 +1,4 @@
-Just some tools for 0x10cc cpu coded in python3.
+Just some tools for 0x10c cpu coded in python3.
 
 A debugger in pyqt, an assembler and a disassembler.
 

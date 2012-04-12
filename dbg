@@ -19,20 +19,16 @@ as the name is changed.
 """
 TODO:
 	- tick
-	- modif Var
+	- modif ram
 """
 
 import os,sys
-import emulateur
+import emulateur, computer
 
 from PyQt4 import QtCore,QtGui
 from windowUi import Ui_MainWindow
 
 COL = 16
-
-class Breaking(Exception):
-	def __init__(self, num):
-		self.num = num
 
 class Main(QtGui.QMainWindow):
 	def __init__(self, f = None):
@@ -44,7 +40,7 @@ class Main(QtGui.QMainWindow):
 		self.emul = emulateur.Emulateur(self.updateVar)
 		
 		self.modelVars = QtGui.QStandardItemModel()
-		self.modelVars.setHorizontalHeaderItem(0, QtGui.QStandardItem("Var"))
+		self.modelVars.setHorizontalHeaderItem(0, QtGui.QStandardItem("Expr"))
 		self.modelVars.setHorizontalHeaderItem(1, QtGui.QStandardItem("Value"))
 		self.ui.vars.setModel(self.modelVars)
 		
@@ -61,15 +57,20 @@ class Main(QtGui.QMainWindow):
 		self.ui.ram.setModel(self.modelRam)
 		
 		self.ui.open.clicked.connect(self.openFile)
-		self.ui.step.clicked.connect(self.emul.step)
+		self.ui.step.clicked.connect(self.step)
 		self.ui.contin.clicked.connect(self.toggle)
 		self.ui.reload.clicked.connect(self.load)
 		self.ui.addVar.clicked.connect(self.addVariable)
 		self.ui.addBreak.clicked.connect(self.addBreakpoint)
 		self.ui.command.returnPressed.connect(self.enter)
+		self.computer = computer.Computer(self.emul)
+		#self.ui.blayout.addWidget(self.can)
+		self.computer.show()
+
+		self.env = {'gui' : self, 'emul':self.emul}
 		
 		for var in ['PC', 'SP'] + list("ABCXYZIJO"):
-			self.addVar(var)
+			self.addVar("emul['{}']".format(var))
 		
 		self.realstdout = sys.stdout
 		sys.stdout = self
@@ -82,7 +83,7 @@ class Main(QtGui.QMainWindow):
 		
 		timer = QtCore.QTimer(self)
 		timer.timeout.connect(self.cb)
-		timer.start(0)
+		timer.start(0)    
 	
 	def toggle(self):
 		self.started = not self.started
@@ -93,18 +94,26 @@ class Main(QtGui.QMainWindow):
 	
 	def cb(self):
 		if self.started:
-			for i in range(0, self.modelBreak.rowCount()):
-				bp = self.modelBreak.item(i, 0).text()
-				if eval(bp, globals(), {'gui' : self, 'emul':self.emul}):
-					print("Breaking because of {bp} ({i})".format(bp=bp, i=i))
-					self.toggle()
-					return
-			try:
-				self.emul.step()
-			except Exception as e:
-				print("Break because of an emulation error : ", str(e))
-				self.toggle()
-	
+			self.step()
+
+	def step(self):
+		for i in range(0, self.modelBreak.rowCount()):
+			bp = self.modelBreak.item(i, 0).text()
+			if eval(bp, globals(), self.env):
+				print("Breaking because of {bp} ({i})".format(bp=bp, i=i))
+				self.started = False
+				self.ui.contin.setText("Continue")
+				return
+		try:
+			self.emul.step()
+		except Exception as e:
+			print("Break because of an emulation error : ", str(e))
+			self.started = False
+			self.ui.contin.setText("Continue")
+		for i in range(0, self.modelVars.rowCount()):
+			self.modelVars.setItem(i, 1, QtGui.QStandardItem(str(eval(self.modelVars.item(i, 0).text(), globals(), self.env))))
+		
+
 	def write(self, txt):
 		self.realstdout.write(txt)
 		self.buffer += txt
@@ -115,7 +124,7 @@ class Main(QtGui.QMainWindow):
 	def enter(self):
 		t = self.ui.command.text()
 		print(">>>", t)
-		r = exec(t, globals(), {'gui' : self, 'emul':self.emul})
+		r = exec(t, globals(), self.env)
 		if r:
 			print(r)
 		self.ui.command.setText("")
@@ -144,53 +153,37 @@ class Main(QtGui.QMainWindow):
 	
 	def addVariable(self):
 		v = QtGui.QInputDialog.getText(self, "Add a var",
-			"Enter the name of a register or a ram adress")
-		try:
-			if v[1]:
-				if v[0] in self.emul.registres:
-					v = v[0]
-				else:
-					if v[0].startswith("0x"):
-						v = int(v[0][2:],16)
-					elif v[0].startswith("0"):
-						v = int(v[0],0)
-					else:
-						v = int(v[0])
-				self.addVar(v)
-		except ValueError:
-			print("Bad adress or register")
-		except IndexError:
-			print("Adress out of ram")
+			"Enter a python expression that will be refresh each step(for example emul['Ox8000']")
+		if v[1]:
+			try:
+				eval(v[0], globals(), self.env)
+			except Exception as e:
+				print("There is an error in your expression {v} : {err}".format(v=v[0], err=str(e)))
+				return
+			self.addVar(v[1])
 	
 	def addBreakpoint(self):
 		v = QtGui.QInputDialog.getText(self, "Add a break point",
 """Enter a python expression which will stop the emulation when evaluating to true.
 For example emul['PC'] == 0x0""")
-		try:
-			eval(v[0], globals(), {'gui' : self, 'emul':self.emul})
-		except Exception as e:
-			print("There is an error in your breakpoint {bp} : {err}".format(bp=v[0], err=str(e)))
-			return
 		if v[1]:
+			try:
+				eval(v[0], globals(), self.env)
+			except Exception as e:
+				print("There is an error in your breakpoint {bp} : {err}".format(bp=v[0], err=str(e)))
+				return
 			self.modelBreak.appendRow(QtGui.QStandardItem(v[0]))
 		
 	
 	def addVar(self, var):
-		if type(var) == int:
-			dvar = hex(var)
-		else:
-			dvar = var
-		dvar = QtGui.QStandardItem(dvar)
-		dval = QtGui.QStandardItem(hex(self.emul[var]))
-		self.modelVars.appendRow([dvar, dval])
+		val = QtGui.QStandardItem(str(eval(var, globals(), self.env)))
+		self.modelVars.appendRow([QtGui.QStandardItem(var), val])
 	
 	def updateVar(self, var, val):
 		if type(var) == int:
 			self.modelRam.setItem(int(var / COL),var % COL, QtGui.QStandardItem(hex(val)))
-			var = hex(var)
-		for i in range(0, self.modelVars.rowCount()):
-			if self.modelVars.item(i, 0).text() == var:
-				self.modelVars.setItem(i, 1, QtGui.QStandardItem(hex(val)))
+			if var in range(0x8000,0x8200):
+				self.computer.repaint()
 	
 def main():
 	app = QtGui.QApplication(sys.argv)
@@ -202,7 +195,6 @@ def main():
 	window.show()
 	print("This is a python interpreter, you can enter command. You have emul to access the emulator and gui for the gui. For example : emul['PC'] return the value of PC and emul['0x42'] what there is at 0x42 in ram")
 	sys.exit(app.exec_())
-    
 
 if __name__ == "__main__":
 	main()

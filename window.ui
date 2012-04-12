@@ -136,14 +136,18 @@
      </layout>
     </item>
     <item>
-     <widget class="QTableView" name="ram">
-      <attribute name="horizontalHeaderVisible">
-       <bool>true</bool>
-      </attribute>
-      <attribute name="horizontalHeaderDefaultSectionSize">
-       <number>80</number>
-      </attribute>
-     </widget>
+     <layout class="QHBoxLayout" name="blayout">
+      <item>
+       <widget class="QTableView" name="ram">
+        <attribute name="horizontalHeaderVisible">
+         <bool>true</bool>
+        </attribute>
+        <attribute name="horizontalHeaderDefaultSectionSize">
+         <number>80</number>
+        </attribute>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
