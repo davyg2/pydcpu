@@ -5,13 +5,13 @@ import sys
 
 if sys.platform == 'win32':
     from cx_Freeze import setup, Executable
-    exs=[Executable("pydcpu-dbg"),Executable("pydcpu-emul"),Executable("pydcpu-asm")]
+    exs=[Executable("pydcpu-dbg", shortcutName='pydcpu-dbg', shortcutDir='DesktopFolder'),Executable("pydcpu-emul"),Executable("pydcpu-asm")]
 else:
     from distutils.core import setup
     exs=[]
 
 setup(name='pydcpu',
-      version='0.1a',
+      version='0.1',
       description='Dcpu toolkit',
       author='Guillaume DAVY',
       author_email='davyg2@gmail.com',
@@ -20,3 +20,4 @@ setup(name='pydcpu',
       packages=['pydcpu'],
       executables = exs
      )
+
